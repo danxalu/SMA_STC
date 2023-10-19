@@ -39,12 +39,10 @@ void new_sum_rump(double& sum, double& err, const double& new_elem, const int& l
 }
 
 
-double sum_rump(const double& sum_prev, const double& new_elem) { //Алгоритм Rump–Ogita–Oishi для первых отсчетов
+void sum_rump(double& sum_cur, const double& new_elem) { //Алгоритм Rump–Ogita–Oishi для первых отсчетов
     double err = 0.0;
-    double sum_cur = sum_prev;
     new_sum_rump(sum_cur, err, new_elem, 1);
     sum_cur += err; //все "хвостики" складываем в отдельную переменную
-    return sum_cur;
 }
 
 
@@ -58,23 +56,19 @@ void sum_rump(double& sum_cur, const double& sum_prev, const double& new_elem, c
 
 
 
-void new_element(double func(double i), double* signal, double* noise, double* readings, int i) {
-    signal[i] = func(i);// *1024;
+void new_element(double func(double i), double& signal, double& noise, double& reading, const int& i) {
+    signal = func((double)i/16);
     bool sign = rand() % 2;
-    noise[i] = pow(-1, sign) * (rand() % 1024) / 1024;
-    readings[i] = signal[i] + noise[i];
+    noise = pow(-1, sign) * (rand() % 1024) / 4096;
+    reading = signal + noise;
 }
 
 
 int main()
 {
-    int n = 1000;
-    int length = 128;
-    double sum;
-
     srand((int)time(NULL));
-    int len_window = pow(2, (rand() % 5));
-    int len_readings = pow(2, (rand() % 15))*len_window;
+    int len_window = 32;//pow(2, (rand() % 5));
+    int len_readings = 200; // pow(2, (rand() % 15))* len_window;
     double* readings = new double[len_readings]; //отсчеты
     double* signal = new double[len_readings];
     double* noise = new double[len_readings];
@@ -83,20 +77,25 @@ int main()
 
     double sum_cur_buffer = 0.0;
     for (int i = 0; i < len_window; i++) {
-        new_element(sin, signal, noise, readings, i);
+        new_element(sin, signal[i], noise[i], readings[i], i);
         sum_rump(sum_cur_buffer, readings[i]);
         SMA[i] = sum_cur_buffer / (i + (double)1);
+        //SMA[i] = (sum_cur_buffer + readings[i]) / (i + (double)1);
     }
     
     for (int i = len_window; i < len_readings; i++) {
-        new_element(sin, signal, noise, readings, i);
+        new_element(sin, signal[i], noise[i], readings[i], i);
         sum_rump(SMA[i], SMA[i-1], readings[i], readings[i-len_window], len_window);
+        //SMA[i] = SMA[i - 1] + (readings[i] - readings[i - len_window]) / len_window;
     }
 
-    print_array(signal, 20);
-    print_array(noise, 20);
-    print_array(readings, 20);
-    print_array(SMA, 20);
+    print_array(signal, 200);
+    std::cout << "\n";
+    //print_array(noise, 200);
+    std::cout << "\n";
+    print_array(readings, 200);
+    std::cout << "\n";
+    print_array(SMA, 200);
 
     delete[] noise;
     delete[] signal;
