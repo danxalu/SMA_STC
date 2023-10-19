@@ -25,7 +25,7 @@ num_type avarage_abs(const num_type* array, const size_t& length) { //функц
 
 
 template <typename num_type>
-void new_element(num_type func(num_type i), num_type& signal, num_type& noise, num_type& reading, const int& i) {
+void new_element(num_type func(num_type i), num_type& signal, num_type& noise, num_type& reading, const int& i) { // функция получения нового случайного отсчета
     signal = func((num_type)i/16); // получаем координату "чистого сигнала"
     bool sign = rand() % 2; // генерируем знак координаты шума
     noise = pow(-1, sign) * (rand() % 1024) / 4096; //генерируем координату шума
@@ -56,14 +56,14 @@ num_type SMA(num_type func(num_type i), int len_window, int len_readings) { // �
     errors = new num_type[len_readings];
 
     sum_cur_buffer = 0.0;
-    for (int i = 0; i < len_window; i++) { // вычисление первых len_window шт. отсчетов
+    for (int i = 0; i < len_window; i++) { // Ыычисление первых len_window шт. отсчетов
         new_element<num_type>(func, signal[i], noise[i], readings[i], i); // получаем "в реальном времени" отсчет
         sum_cur_buffer += readings[i]; // заносим его в буфер-сумму
-        sma[i] = sum_cur_buffer / (i + (num_type)1); // считаем значение ПCС в данной кооординате
+        sma[i] = sum_cur_buffer / (i + 1); // считаем значение ПCС в данной кооординате
         errors[i] = signal[i] - sma[i]; // считаем ошибку 
     }
 
-    for (int i = len_window; i < len_readings; i++) { // вычисление остальных len_window шт. отсчетов
+    for (int i = len_window; i < len_readings; i++) { // Ыычисление остальных len_window шт. отсчетов
         new_element<num_type>(func, signal[i], noise[i], readings[i], i);
         sma[i] = sma[i - 1] + (readings[i] - readings[i - len_window]) / len_window; // считаем значение ПCС "рекурсивно" (через значение прошлой координаты) 
         errors[i] = signal[i] - sma[i];
@@ -93,7 +93,7 @@ num_type run_SMA(num_type func(num_type i), int num_for_rand) { // функци�
 
 template <typename num_type>
 void run_tests() {
-    //посчитаем ошибки ПСС для функций sin(x) и sin(cos(x))
+    // Считаем ошибки ПСС для функций sin(x) и sin(cos(x))
     num_type errs_sin[10];
     num_type errs_sin_cos[10];
     for (size_t i = 0; i < 10; i++) {
@@ -101,7 +101,7 @@ void run_tests() {
         errs_sin_cos[i] = run_SMA<num_type>(sin_cos, i);
     }
 
-    //средние ошибки
+    // Средние ошибок
     num_type err_sin = avarage_abs<num_type>(errs_sin, 10);
     num_type err_sin_cos = avarage_abs<num_type>(errs_sin_cos, 10);
 
@@ -113,16 +113,18 @@ void run_tests() {
 }
 
 
-void performance_comparison() {
+void performance_comparison() { //Сравнение производительностей
     printf("%12s %12s %12s\n", "len_window", "type", "performance");
     for (int len_window = 4; len_window < 256; len_window *= 2) {
-        auto begin = std::chrono::steady_clock::now();
+        //для типа float
+        auto begin = std::chrono::steady_clock::now(); // (*) засекаем время начала выполнения функции ПСС
         SMA<float>(sin, len_window, 1e6);
-        auto end = std::chrono::steady_clock::now();
+        auto end = std::chrono::steady_clock::now(); // (*) конца
 
-        auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-        printf("%12i %12s %12e\n", len_window, "float", 1e9 / elapsed_ms.count());
+        auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin); // считаем количество пройденных миллисекунд
+        printf("%12i %12s %12e\n", len_window, "float", 1e9 / elapsed_ms.count());  // считаем производительность (отсчеты/сек), учитываем, что отсчетов 1e6 шт., а мс = 0.001 сек
 
+        //для типа double (аналогично)
         begin = std::chrono::steady_clock::now();
         SMA<double>(sin, len_window, 1e6);
         end = std::chrono::steady_clock::now();
@@ -134,6 +136,6 @@ void performance_comparison() {
 
 int main()
 {
-    performance_comparison();
+    //performance_comparison();
     run_tests<float>();
 }
