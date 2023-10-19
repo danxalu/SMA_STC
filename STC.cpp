@@ -14,16 +14,17 @@ void print_array(const double* array, const size_t& length) //функция в�
 
 void two_sums(double& sum, double& err, const double& new_elem) { // Вспомогательная функция для алгоритма Rump–Ogita–Oishi
     sum += new_elem;
-    double bs = sum - new_elem;
-    double as = sum - bs;
-    err += (new_elem - bs) + (sum - as);
+    double s = sum + new_elem;
+    double bs = s - new_elem;
+    double as = s - bs;
+    err += (new_elem - bs) + (sum - as); // все "хвостики" складываем в отдельную переменную
 }
 
 
 void sum_rump(double& sum_cur, const double& new_elem) { // Алгоритм Rump–Ogita–Oishi для первых отсчетов
     double err = 0.0;
     two_sums(sum_cur, err, new_elem);
-    sum_cur += err; // все "хвостики" складываем в отдельную переменную
+    sum_cur += err; // добавляем "хвостик"
 }
 
 
@@ -32,8 +33,8 @@ void sum_rump(double& sum_cur, const double& sum_prev, const double& new_elem, c
     sum_cur = sum_prev;
     double sum_elems = -old_elem;
     two_sums(sum_elems, err, new_elem);
-    two_sums(sum_cur, err, sum_elems / len_window);
-    sum_cur += err; // все "хвостики" складываем в отдельную переменную
+    two_sums(sum_cur, err, (double)(sum_elems / len_window));
+    sum_cur += err; // добавляем "хвостик"
 }
 
 
@@ -47,7 +48,7 @@ void new_element(double func(double i), double& signal, double& noise, double& r
 
 int main()
 {
-    srand((int)time(NULL)); // задаем сид для генерирования псевдослучайных чисел
+    srand(0);//(int)time(NULL)); // задаем сид для генерирования псевдослучайных чисел
     int len_window = 32;// pow(2, (rand() % 5));
     int len_readings = 200; // pow(2, (rand() % 15))* len_window;
     double* readings = new double[len_readings]; // отсчеты
